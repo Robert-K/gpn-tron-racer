@@ -70,7 +70,7 @@ def get_player(x, y):
 
 # Print the current grid with emojis, highlight my player and show its direction, also highlight other player heads
 def print_grid():
-    os.system('cls')
+    os.system('cls' if os.name=='nt' else 'clear')
     for y in range(current_game['height']):
         for x in range(current_game['width']):
             if current_game['grid'][x][y] == current_game['player_id']:
