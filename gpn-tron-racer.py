@@ -1,4 +1,4 @@
-import socket, os, datetime, random
+import socket, os, datetime, random, time
 
 if os.name == 'nt':
     import msvcrt
@@ -270,33 +270,37 @@ def handle_input():
         if key in input_map:
             input_dir = input_map[key]
             move(input_dir)
-
-# Connect to the server
-with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
-    sock = s
-    s.connect((HOST, PORT))
-    s.settimeout(1)
-    print(f'Connected to {HOST}:{PORT}')
-    s.sendall(compose('join', USER, PASS))
+while True:
     try:
-        while 'life is good':
-            line = b''
-            while not line.endswith(b'\n'):
-                try:
-                    line += s.recv(1)
-                    handle_input()
-                except socket.timeout as e:
-                    err = e.args[0]
-                    if err == 'timed out':
-                        handle_input()
-                        continue
-                    else:
-                        print(e)
-                        exit(1)
-            handle_cmd(line)
-            if current_game:
-                print_grid()
-    
-    except KeyboardInterrupt:
-        print('Interrupt received, exiting smoothly...')
-        exit(0)
+        # Connect to the server
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+            sock = s
+            s.connect((HOST, PORT))
+            s.settimeout(1)
+            print(f'Connected to {HOST}:{PORT}')
+            s.sendall(compose('join', USER, PASS))
+            try:
+                while 'life is good':
+                    line = b''
+                    while not line.endswith(b'\n'):
+                        try:
+                            line += s.recv(1)
+                            handle_input()
+                        except socket.timeout as e:
+                            err = e.args[0]
+                            if err == 'timed out':
+                                handle_input()
+                                continue
+                            else:
+                                print(e)
+                                exit(1)
+                    handle_cmd(line)
+                    if current_game:
+                        print_grid()
+            
+            except KeyboardInterrupt:
+                print('Interrupt received, exiting smoothly...')
+                exit(0)
+    except e:
+        print(e)
+        time.sleep(10)
