@@ -301,6 +301,6 @@ while True:
             except KeyboardInterrupt:
                 print('Interrupt received, exiting smoothly...')
                 exit(0)
-    except e:
+    except Exception as e:
         print(e)
-        time.sleep(10)
+        time.sleep(1)
