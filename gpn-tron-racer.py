@@ -1,4 +1,7 @@
-import socket, os, datetime, random, time
+import socket, os, datetime, random, time, sys
+
+# Large grids can cause stack overflows, so we increase the recursion limit
+sys.setrecursionlimit(3000)
 
 if os.name == 'nt':
     import msvcrt
