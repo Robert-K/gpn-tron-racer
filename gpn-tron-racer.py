@@ -1,5 +1,4 @@
 import socket, os, datetime, random
-from quoters import Quote
 
 if os.name == 'nt':
     import msvcrt
@@ -181,8 +180,6 @@ def handle_tick():
     if not current_game['alive']: return
     calculate_move()
     move(input_dir)
-    if current_game['tick'] == 37:
-        chat(Quote.print())
 
 # Handle player position update
 def handle_pos(player_id, x, y):
