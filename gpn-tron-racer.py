@@ -8,7 +8,7 @@ else:
 HOST = 'gpn-tron.duckdns.org'
 PORT = 4000
 
-USER = os.getenv('GPN_TRON_USER')
+USER = 'Kosro' # os.getenv('GPN_TRON_USER')
 PASS = os.getenv('GPN_TRON_PASS')
 
 if not USER or not PASS:
@@ -24,6 +24,7 @@ input_dir = 'up'
 sock = None
 
 flood_grid = None
+voronoi_grid = None
 
 wins = 0
 losses = 0
@@ -47,11 +48,12 @@ player_emojis = [
 
 # Initialize a new game
 def init_game(width, height, player_id):
-    global current_game, player_emojis
+    global current_game, player_emojis, voronoi_grid
     width = int(width)
     height = int(height)
     player_id = int(player_id)
     current_game = { 'width' : width, 'height' : height, 'player_id' : player_id, 'players' : {}, 'grid' : [ ['X'] * height for _ in range(width)], 'tick' : 0, 'alive': True}
+    voronoi_grid = [ [{'value': width + height, 'player': None} for _ in range(height)] for _ in range(width)]
     random.shuffle(player_emojis)
     print(f'New game started: {width}x{height} | Player ID: {player_id}')
     chat(f'GLHF! {wins}W {losses}L')
@@ -70,7 +72,7 @@ def get_player(x, y):
 
 # Print the current grid with emojis, highlight my player and show its direction, also highlight other player heads
 def print_grid():
-    os.system('cls' if os.name=='nt' else 'clear')
+    # os.system('cls' if os.name=='nt' else 'clear')
     for y in range(current_game['height']):
         for x in range(current_game['width']):
             if current_game['grid'][x][y] == current_game['player_id']:
@@ -90,9 +92,15 @@ def print_grid():
             else:
                 print('⬛', end='')
         print()
-    print(f'Tick {"{:03d}".format(current_game["tick"])} at {datetime.datetime.now().strftime("%H:%M:%S")}')
+    print(f'Tick {"{:03d}".format(current_game["tick"])} at {datetime.datetime.now().strftime("%H:%M:%S")}  {current_game["player_id"]}')
     if wins + losses > 0:
         print(f'{"{:03d}".format(wins)}🏆  {"{:03d}".format(losses)}💀  {"{:0.2f}".format(wins / (wins + losses))}⚖️  {"✔️" if won_last_game else "❌"}')
+
+def print_voronoi_grid():
+    for y in range(current_game['height']):
+        for x in range(current_game['width']):
+            print('{:02d}'.format(voronoi_grid[x][y]['player']) if voronoi_grid[x][y]['player'] else '--', end='')
+        print()
 
 def move(dir):
     sock.sendall(compose('move', dir))
@@ -150,6 +158,43 @@ def adjacent_heads(x, y):
         heads += 1
     return heads
 
+def voronoi_fill(x,y, player_id, distance=0):
+    global voronoi_grid
+    x, y = wrap(x, y)
+    if (voronoi_grid[x][y]['tile'] == 'X' or get_player(x, y) == player_id) and voronoi_grid[x][y]['distance'] > distance:
+        voronoi_grid[x][y]['player'] = player_id
+        voronoi_grid[x][y]['distance'] = distance
+        voronoi_fill(x, y-1, player_id, distance+1)
+        voronoi_fill(x, y+1, player_id, distance+1)
+        voronoi_fill(x-1, y, player_id, distance+1)
+        voronoi_fill(x+1, y, player_id, distance+1)
+    if voronoi_grid[x][y]['tile'] == 'X' and voronoi_grid[x][y]['distance'] == distance and voronoi_grid[x][y]['player'] != player_id:
+        voronoi_grid[x][y]['player'] = None
+
+def evaluate_voronoi(x, y):
+    global voronoi_grid
+    x,y = wrap(x, y)
+    if current_game['grid'][x][y] != 'X': return -99999
+    for j in range(current_game['height']):
+        for i in range(current_game['width']):
+            voronoi_grid[i][j] = {'player': get_player(i, j), 'distance': 99999, 'tile': current_game['grid'][i][j]}
+    voronoi_grid[x][y] = {'player': current_game['player_id'], 'distance': 0, 'tile': current_game['player_id']}
+    voronoi_fill(x, y, current_game['player_id'])
+    for player in current_game['players']:
+        if player == current_game['player_id']: continue
+        x = current_game['players'][player]['x']
+        y = current_game['players'][player]['y']
+        voronoi_fill(x, y, player, -1)
+    friendly_area = 0
+    enemy_area = 0
+    for j in range(current_game['height']):
+        for i in range(current_game['width']):
+            if voronoi_grid[i][j]['player'] == current_game['player_id']:
+                friendly_area += 1
+            elif voronoi_grid[i][j]['player'] != None:
+                enemy_area += 1
+    return friendly_area - enemy_area
+
 # Evaluate a direction based on available area, prefer areas with less heads
 def evaluate_direction(x, y):
     global flood_grid
@@ -163,12 +208,21 @@ def calculate_move():
     global input_dir
     x = current_game['players'][current_game['player_id']]['x']
     y = current_game['players'][current_game['player_id']]['y']
-    options = [
+    old_options = [
         {'dir': 'up', 'value': evaluate_direction(x, y-1)},
         {'dir': 'down', 'value': evaluate_direction(x, y+1)},
         {'dir': 'left', 'value': evaluate_direction(x-1, y)},
         {'dir': 'right', 'value': evaluate_direction(x+1, y)}
     ]
+    options = [
+        {'dir': 'up', 'value': evaluate_voronoi(x, y-1)},
+        {'dir': 'down', 'value': evaluate_voronoi(x, y+1)},
+        {'dir': 'left', 'value': evaluate_voronoi(x-1, y)},
+        {'dir': 'right', 'value': evaluate_voronoi(x+1, y)}
+    ]
+    for option in options:
+        print(option['value'], end=' ')
+    print()
     if shuffle: random.shuffle(options)
     options.sort(key=lambda x: x['value'], reverse=True)
     input_dir = options[0]['dir']
@@ -293,9 +347,11 @@ with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
                     else:
                         print(e)
                         exit(1)
+            os.system('cls' if os.name=='nt' else 'clear')
             handle_cmd(line)
             if current_game:
                 print_grid()
+                print_voronoi_grid()
     
     except KeyboardInterrupt:
         print('Interrupt received, exiting smoothly...')
