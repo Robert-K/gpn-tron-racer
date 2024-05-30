@@ -276,7 +276,7 @@ def handle_input():
 while True:
     try:
         # Connect to the server
-        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             sock = s
             s.connect((HOST, PORT))
             s.settimeout(1)
