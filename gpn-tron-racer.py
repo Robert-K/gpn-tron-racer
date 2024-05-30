@@ -210,7 +210,7 @@ def handle_die(*player_ids):
 
 # Handle my loss
 def handle_loss(wins, losses):
-    global won_last_game, nemeses
+    global won_last_game
     won_last_game = False
     globals()['wins'] = int(wins)
     globals()['losses'] = int(losses)
