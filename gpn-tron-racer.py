@@ -33,7 +33,9 @@ losses = 0
 
 won_last_game = False
 
-shuffle = False
+shuffle = True
+
+exit_requested = False
 
 # Send chat message
 def chat(msg):
@@ -79,13 +81,13 @@ def print_grid():
             if current_game['grid'][x][y] == current_game['player_id']:
                 if current_game['players'][current_game['player_id']]['x'] == x and current_game['players'][current_game['player_id']]['y'] == y:
                     if input_dir == 'up':
-                        print('🔼', end='')
+                        print('⬆️ ', end='')
                     elif input_dir == 'down':
-                        print('🔽', end='')
+                        print('⬇️ ', end='')
                     elif input_dir == 'left':
-                        print('◀️ ', end='')
+                        print('⬅️ ', end='')
                     elif input_dir == 'right':
-                        print('▶️ ', end='')
+                        print('➡️ ', end='')
                 else:
                     print('🟦', end='')
             elif current_game['grid'][x][y] in current_game['players']:
@@ -95,7 +97,9 @@ def print_grid():
         print()
     print(f'Tick {"{:03d}".format(current_game["tick"])} at {datetime.datetime.now().strftime("%H:%M:%S")}')
     if wins + losses > 0:
-        print(f'{"{:03d}".format(wins)}🏆  {"{:03d}".format(losses)}💀  {"{:0.2f}".format(wins / (wins + losses))}⚖️  {"✔️" if won_last_game else "❌"}')
+        print(f'{"{:03d}".format(wins)}🏆  {"{:03d}".format(losses)}💀  {"{:0.2f}".format(wins / (wins + losses))}⚖️  {"✔️" if won_last_game else "❌"}  🐍 {len(current_game["players"])}')
+    if exit_requested:
+        print('Exiting after current game...')
 
 def move(dir):
     sock.sendall(compose('move', dir))
@@ -159,7 +163,7 @@ def evaluate_direction(x, y):
     flood_grid = [row[:] for row in current_game['grid']]
     area, heads = flood_fill(x, y)
     value = area - heads - adjacent_heads(x, y)
-    return value if value > 0 else area
+    return value if value > 0 else area - adjacent_heads(x, y)
 
 # Calculate the next move based on available area, prefer areas with less heads
 def calculate_move():
@@ -212,6 +216,8 @@ def handle_loss(wins, losses):
     globals()['losses'] = int(losses)
     handle_die(current_game['player_id'])
     current_game['alive'] = False
+    if exit_requested:
+        exit(0)
     # print(f'You lost :( Wins: {wins} | Losses: {losses}')
 
 # Handle my win
@@ -220,6 +226,8 @@ def handle_win(wins, losses):
     won_last_game = True
     globals()['wins'] = int(wins)
     globals()['losses'] = int(losses)
+    if exit_requested:
+        exit(0)
     # print(f'You won! Wins: {wins} | Losses: {losses}')
 
 # Compose a command to send to the server
@@ -302,8 +310,13 @@ while True:
                         print_grid()
             
             except KeyboardInterrupt:
-                print('Interrupt received, exiting smoothly...')
-                exit(0)
+                if not exit_requested:
+                    exit_requested = True
+                    print('Interrupt received, exiting after current game...')
+                else:
+                    print('Exiting immediately...')
+                    break
+                
     except Exception as e:
         print(e)
         time.sleep(1)
