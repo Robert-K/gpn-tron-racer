@@ -209,6 +209,8 @@ def handle_die(*player_ids):
             for y in range(current_game['height']):
                 if current_game['grid'][x][y] == player_id:
                     current_game['grid'][x][y] = 'X'
+        if player_id == current_game['player_id'] and exit_requested:
+            exit(0)
 
 # Handle my loss
 def handle_loss(wins, losses):
