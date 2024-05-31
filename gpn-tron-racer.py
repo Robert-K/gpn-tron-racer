@@ -176,7 +176,9 @@ def calculate_move():
         {'dir': 'left', 'value': evaluate_direction(x-1, y)},
         {'dir': 'right', 'value': evaluate_direction(x+1, y)}
     ]
-    if shuffle: random.shuffle(options)
+    area, heads = flood_fill(x, y)
+    if heads > 0:
+        if shuffle: random.shuffle(options)
     options.sort(key=lambda x: x['value'], reverse=True)
     input_dir = options[0]['dir']
 
