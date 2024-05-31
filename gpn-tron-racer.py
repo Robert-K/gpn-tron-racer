@@ -156,7 +156,7 @@ def compare_grids(mine, theirs):
                 score += 1
                 overlap = True
             elif theirs[x][y] != 0 and mine[x][y] > theirs[x][y]:
-                score -= 1 / (len(current_game["players"]) + 1)
+                score -= ( 1 / (len(current_game["players"]) + 1) ) * 0.5
                 overlap = True
     return score
 
