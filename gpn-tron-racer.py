@@ -116,7 +116,7 @@ def print_grid():
 def print_stats():
     print(f'🕑 Tick {"{:03d}".format(current_game["tick"])} at {datetime.datetime.now().strftime("%H:%M:%S")}')
     print(f'{"⚔️" if overlap else "🛡️"}  {"😱" if enemy_near else "😊"} {"{:.1f}".format(best_score)} {"🎯" if best_dir else "❓"}')
-    print(f'{ "⬆️" if "up" in valid_moves else "  "}  {"⬅️" if "left" in valid_moves else "  "}  {"➡️" if "right" in valid_moves else "  "}  {"⬇️" if "down" in valid_moves else "  "}')
+    print(f'{ "⬆️" if "up" in valid_moves else "  "}  {"⬅️" if "left" in valid_moves else "  "}  {"➡️" if "right" in valid_moves else "  "}  {"⬇️" if "down" in valid_moves else "  "}  {"🌟" if won_last_game else "  "}')
     print(f'{"{:03d}".format(wins)} 🏆  {"{:03d}".format(losses)} 💀  {"{:0.2f}".format(wins / (wins + losses)) if wins + losses > 0 else "N/A"} ⚖️   🐍 {len(current_game["players"])}')
 
 def move(dir):
