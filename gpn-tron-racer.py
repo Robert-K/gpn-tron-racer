@@ -163,6 +163,14 @@ def evaluate_direction(x, y):
     flood_grid = [row[:] for row in current_game['grid']]
     area, heads = flood_fill(x, y)
     value = area - heads - adjacent_heads(x, y)
+    for enemy in current_game['players']:
+        if enemy != current_game['player_id']:
+            enemy_x = current_game['players'][enemy]['x']
+            enemy_y = current_game['players'][enemy]['y']
+            flood_grid = [row[:] for row in current_game['grid']]
+            flood_grid[x][y] = 'F'
+            enemy_area, enemy_heads = flood_fill(enemy_x, enemy_y)
+            value -= enemy_area * 0.2
     return value if value > 0 else area - adjacent_heads(x, y)
 
 # Calculate the next move based on available area, prefer areas with less heads
