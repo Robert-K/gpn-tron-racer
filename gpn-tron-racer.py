@@ -176,6 +176,7 @@ def calculate_move():
         {'dir': 'left', 'value': evaluate_direction(x-1, y)},
         {'dir': 'right', 'value': evaluate_direction(x+1, y)}
     ]
+    flood_grid = [row[:] for row in current_game['grid']]
     area, heads = flood_fill(x, y)
     if heads > 0:
         if shuffle: random.shuffle(options)
